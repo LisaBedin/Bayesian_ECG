@@ -1,0 +1,41 @@
+name: vdps
+nsteps: 50 # 200 # 200  # 300
+nsamples: 10
+missingness: 1  #50  # 50  # 50  # 20
+seed: 0
+init_std: 0.05
+missingness_type: 'lead' # 'bm'  # 'bm'  # 'mnr'  # 'bm'  # 'bm'
+
+reddiff:
+  name: "reddiff"
+  deg: "deno"
+  awd: True
+  cond_awd: False
+  obs_weight: 1.0
+  grad_term_weight: 0.05  # 0.25
+  denoise_term_weight: "linear"    #"linear", "sqrt", "log", "square", "trunc_linear", "const", "power2over3"
+  sigma_y: 0.0
+  eta: 0.0
+  lr: 0.3 # 0.1
+  sigma_x0: 0.0
+
+
+parameters:
+  #default configuration
+  lr: 3e-2
+  optimizer: 'adam'
+  alpha: 0.5
+  ddim_init: False
+  ddim_init_steps: 0
+  threshold:  0. # 200000
+  display_im: False
+  gradient_steps_fn:
+    conditions:
+      - condition: "i <= 20"
+        return: 2
+      - condition: "i >= n_steps - 20"
+        return: 20
+      - condition: "i % 20 == 0"  # should be the same as default... I observe weird generation otherwise
+        return: 2
+      - condition: "default"
+        return: 2

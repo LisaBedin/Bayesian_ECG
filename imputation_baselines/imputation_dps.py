@@ -1,0 +1,146 @@
+import os
+from dataclasses import dataclass
+import sys
+sys.path.append('.')
+import hydra
+from omegaconf import DictConfig, OmegaConf
+import numpy as np
+from tqdm import tqdm
+
+from posterior_samplers.utils import display_time_series, fix_seed
+from posterior_samplers.diffusion_utils import EpsilonNet
+from posterior_samplers.svd_replacement import InpaintingTimeSeries
+from posterior_samplers.dps import dps
+from posterior_samplers.mask_generator import get_mask_bm, get_mask_rm, get_mask_mnr
+
+import torch
+from torch.func import vmap
+
+from diffusion_prior.dataloaders import dataloader
+from diffusion_prior.utils import calc_diffusion_hyperparams, local_directory, print_size  # 
+from diffusion_prior.models import construct_model
+
+
+@hydra.main(version_base=None, config_path="../sashimi/configs/", config_name="config")
+def main(cfg: DictConfig) -> None:
+    print(OmegaConf.to_yaml(cfg))
+    OmegaConf.set_struct(cfg, False)  # Allow writing keys
+
+    fix_seed(cfg.algo.seed)
+    print(f'Fixed seed {cfg.algo.seed}')
+    num_gpus = torch.cuda.device_count()
+    cfg.dataset.training_class = 'test'
+    cfg.train.batch_size_per_gpu = 1
+    testloader = dataloader(cfg.dataset, batch_size=cfg.train.batch_size_per_gpu, num_gpus=num_gpus, unconditional=cfg.model.unconditional, shuffle=False)
+
+    local_path, output_directory = local_directory(None, cfg.train.results_path,
+                                                   cfg.model, cfg.diffusion,
+                                                   cfg.dataset,
+                                                   'waveforms')
+
+    # ==== loading checkpoints ==== #
+    sashimi_net = construct_model(cfg.model).cuda()
+    print_size(sashimi_net)
+    sashimi_net.eval()
+    ckpt_path = os.path.join(cfg.train.results_path, local_path, 'checkpoint', 'checkpoint.pkl')  # '{}.pkl'.format(ckpt_iter))
+    checkpoint = torch.load(ckpt_path, map_location='cpu')
+    sashimi_net.load_state_dict(checkpoint['model_state_dict'])
+    sashimi_net.requires_grad_(False)
+    sashimi_net.eval()
+    # sashimi_net = ModelWrapper(sashimi_net)
+
+    timesteps = torch.linspace(0, cfg.diffusion.T-1, cfg.algo.nsteps).long()
+    _dh = calc_diffusion_hyperparams(**cfg.diffusion, fast=False)
+    T, Alpha, alphas_cumprod, Sigma = _dh["T"], _dh["Alpha"], _dh["Alpha_bar"], _dh["Sigma"]
+    alphas_cumprod = torch.concatenate([torch.tensor([1.0]).to(alphas_cumprod.device), alphas_cumprod])
+
+    # dataset = PhysionetECG(**cfg.dataset)
+    # default_grad_steps = cfg.algo.parameters.gradient_steps_fn['conditions'][-1]['return']
+    results_path = os.path.join(output_directory, f'{cfg.dataset.name}_{cfg.algo.missingness_type}{cfg.algo.missingness}')  # _K{cfg.algo.nsteps}_grad{default_grad_steps}')
+    os.makedirs(results_path, exist_ok=True)
+    all_samples, all_labels, all_x, all_masks = [], [], [], []
+
+    for x_orig, labels in tqdm(testloader, total=len(testloader)):
+        x_orig = x_orig.cuda()  # [:2]
+        labels = labels.cuda().to(torch.float32) # [:2]
+        # break
+        epsilon_net = EpsilonNet(sashimi_net, alphas_cumprod, timesteps, x_orig.shape[1:])
+
+        # ======== getting the observation =========== #
+        if cfg.algo.missingness_type == 'rm':
+            mask = np.stack([get_mask_rm(x_orig[0].T, k=int(cfg.dataset.segment_length*cfg.algo.missingness/100)).T.to(bool) for _ in range(len(x_orig))])
+        if cfg.algo.missingness_type == 'mnr':
+            mask = np.stack([get_mask_mnr(x_orig[0].T, k=int(cfg.dataset.segment_length * cfg.algo.missingness / 100)).T.to(bool) for _ in range(len(x_orig))])
+        if cfg.algo.missingness_type == 'bm':
+            mask = np.stack([get_mask_bm(x_orig[0].T, k=int(cfg.dataset.segment_length * cfg.algo.missingness / 100)).T.to(bool) for _ in range(len(x_orig))])
+        if cfg.algo.missingness_type == 'lead':
+            mask = np.zeros(x_orig.shape)
+            mask[:, :cfg.algo.missingness] = 1
+            mask = mask.astype(bool)
+        # obs = torch.ones_like(x_orig)*torch.nan  # [mask].view(x_orig.shape[0], -1)
+        # obs[mask] = x_orig[mask]
+        print('##### missingness ######', cfg.algo.missingness)
+        # ==== using H function ==== #
+        leads, time_points = np.meshgrid(
+            np.arange(9),
+            np.arange(cfg.dataset.segment_length),
+        )
+        missing_indices = (leads[~mask[0].T] * cfg.dataset.segment_length + time_points[~mask[0].T]).flatten()
+
+        H_func = InpaintingTimeSeries(9, cfg.dataset.segment_length, missing_indices, torch.device('cuda'))
+        # obs_tmp = H_func.H(x_orig[0:1]).reshape(-1, 9)
+        # obs_bis = torch.zeros((9, 256)).cuda()
+        # obs_bis[mask[0]] = obs_tmp.flatten()
+        # display_time_series(obs[:1], gt=obs_bis.cpu())
+        # recon = H_func.H_pinv(H_func.H(x_orig[0:1])).reshape(9, -1)
+        # display_time_series(obs[:1], gt=recon.cpu())
+
+        # display_time_series(obs_img.detach().cpu(), gt=x_orig[0, :3].detach().cpu())
+        cfg.algo.nsamples = 10  # obs.shape[0]
+
+        shape = x_orig.shape[1:]  # (9, 1024)
+        initial_noise = torch.randn((cfg.algo.nsamples, *shape)).cuda()
+
+        samples = dps(
+            initial_noise,
+            (H_func.H(x_orig[0:1]), H_func.H, H_func.H(x_orig[0:1])),
+            epsilon_net,
+            labels=labels[0:1],
+            gamma=.5,
+            noise_type='gaussian',
+            poisson_rate=0.1,
+            display_freq=100000,
+            display_im=False,
+            display_fn=display_time_series,
+            ground_truth=x_orig.cpu()[0]
+        )
+        # vdps_vmap = vmap(vdps_fn)
+        # initial_noise = torch.randn((x_orig.shape[0], cfg.algo.nsamples, *shape)).cuda()
+        # # mask_torch = torch.tensor(mask.astype(int))  # .cuda()
+        # leads, time_points = torch.tensor(leads), torch.tensor(time_points)
+        # missing_ind = np.stack([
+        #     (leads[~mask[k].T] * cfg.dataset.segment_length + time_points[~mask[k].T]).flatten() for k in range(mask.shape[0])])
+        # all_H = [InpaintingTimeSeries(9, cfg.dataset.segment_length, missing_ind[k], torch.device('cuda')) for k in range(len(missing_ind))]
+        # x_orig_ind = torch.arange(x_orig.shape[0], dtype=torch.long, device=torch.device('cuda'))
+        # samples = vdps_vmap(x_orig.unsqueeze(1), labels.unsqueeze(1), initial_noise, x_orig_ind)
+
+        # pred = samples.mean(dim=0).cpu().numpy()
+        # real = x_orig.cpu()[0].numpy()
+        # print('MAE', np.absolute(pred - real)[3:].sum(axis=0).mean())
+        # display_time_series(pred, gt=real)
+        # display_time_series(samples[-1].cpu(), gt=x_orig.cpu()[-1])
+        all_samples.append(samples.detach().cpu())
+        all_labels.append(labels.detach().cpu())
+        all_x.append(x_orig.detach().cpu())
+        all_masks.append(mask)
+        np.savez(os.path.join(results_path, f'DPS_seed{cfg.algo.seed}.npz'),
+                 generated=np.stack(all_samples),
+                 label=np.concatenate(all_labels),
+                 real=np.concatenate(all_x),
+                 mask=np.concatenate(all_masks))
+        print('ok')
+
+
+if __name__ == '__main__':
+    main()
+

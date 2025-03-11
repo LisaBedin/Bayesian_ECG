@@ -1,0 +1,69 @@
+defaults:
+  - _self_
+  - experiment: ecg  # sc09
+  - algo: vdps  # _old_bis
+
+train: # Not used in generate.py
+  name: null # Name of experiment (prefix of experiment name)
+  ckpt_iter: max
+  iters_per_ckpt: 10 # 1000
+  iters_per_logging: 10000 # 100
+  n_iters: 1000001
+  learning_rate: 2e-4
+  batch_size_per_gpu: 256 # 64 #  128  #  128  #  128  #  64  # 4
+  # results_path: /lustre/fsn1/projects/rech/vpd/udw33dp/ecg_results/sashimi
+  results_path: /mnt/data/lisa/ecg_results/sashimi
+
+generate:
+  ckpt_iter: max # Which checkpoint to use; assign a number or "max". Is ignored when sampling during training
+  ckpt_smooth: null # Which checkpoint to start averaging from (experimental feature, can ignore)
+  n_samples: 2 # Number of utterances to be generated (per GPU)
+  batch_size: null # Number of samples to generate at once per GPU. null means max (equal to samples_per_gpu)
+  # mel_path: null # Folder of preprocessed spectrograms (optional)
+  # mel_name: null # Name of specific spectrogram to condition on (set to null for unconditional, set to an audio file name for vocoding)
+
+distributed:
+  dist_backend: nccl
+  dist_url: tcp://localhost:54321
+
+denoising:
+  # f_c_min: 0 #0
+  # f_c_max: 1 # 0.7
+  # l1reg: 10 # 0.1
+  # l2reg: 10
+  # J: 100
+  # # n_leads: 9
+  # amplitude: 1
+  # # T: 20
+  # # N: 50
+  noise_type: 'bw' # 'em'
+  # both_leads: True
+  # #results_path: '/lustre/fsn1/projects/rech/vpd/udw33dp/ecg_results/denoising'
+  # results_path: '/mnt/data/lisa/ecg_results/denoising'
+  EM_step: 5
+  alpha_lasso: 0.1
+  alpha_ridge: 1
+
+evaluate:
+  #benchmark_folder: '/lustre/fsn1/projects/rech/vpd/udw33dp/ECG_inverse_problems_benchmark_data'
+  benchmark_folder: '/mnt/Reseau/Signal/lisa/ECG_inverse_problems_benchmark_data'
+  train_downstream: 'gen'  #  'real'
+
+semi_supervised:
+  results_path: '/lustre/fsn1/projects/rech/vpd/udw33dp/ecg_results/semi_supervised/ViT_SSL_exp3'
+  epochs: 200
+  batch_size: 64  # 1024
+  accum_iter: 1
+  log_iter: 100  #100
+  weight_decay: 0.05 #, type=float, default=0.05, help='weight decay (default: 0.05)')
+  #lr: 0.00003  #type=float, default=None, metavar='LR', help='learning rate (absolute lr)')
+  blr: 1.5e-4 #1e-3  #parser.add_argument('--blr', type=float, default=1e-3, metavar='LR', help='base learning rate: absolute_lr = base_lr * total_batch_size / 256')
+  #min_lr: 0.  #parser.add_argument('--min_lr', type=float, default=0., metavar='LR', help='lower lr bound for cyclic schedulers that hit 0')
+  warmup_epoch: 5   #parser.add_argument('--warmup_epochs', type=int, default=40, metavar='N',help='epochs to warmup LR')
+
+wandb:
+  mode: offline  # online # Pass in 'wandb.mode=online' to turn on wandb logging
+  project: sashimi
+  entity: phdlisa  # phdgabriel
+  id: null # Set to string to resume logging from run
+  job_type: training

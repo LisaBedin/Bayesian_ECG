@@ -1,0 +1,9 @@
+_name_: "large"
+name: "large"
+ptbxl_path: '/lustre/fsn1/projects/rech/vpd/udw33dp/physionet.org/files/ptb-xl/1.0.3'
+mimic_path: '/lustre/fsn1/projects/rech/vpd/udw33dp/mimic'
+sampling_rate: 100  # 125
+all_limb: false
+segment_length: 1024  # 256  #1024  # 256  # 256 #  1024  # 2048  #   #  2048  # 2500
+training_class: 'train'
+model_path: '/lustre/fsn1/projects/rech/vpd/udw33dp/ECG_inverse_problems_benchmark_data/resnet50_pseudolabels'
