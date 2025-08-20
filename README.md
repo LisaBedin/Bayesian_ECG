@@ -2,7 +2,7 @@
 
 ## Datasets
 * [ptbxl](https://physionet.org/content/ptb-xl/1.0.3/): ```python preprocessing/generate_ptb_xl.py <path of download ptbxl dataset> <target sampling frequency>```
-  * description of available statements [scp_statements](https://physionet.org/content/ptb-xl/1.0.1/scp_statements.csv) (scp_statements)
+  * description of available statements [scp_statements](https://physionet.org/content/ptb-xl/1.0.1/scp_statements.csv)
 * download noise database [nstdb](https://physionet.org/content/nstdb/1.0.0/)
 
 ## Diffusion Generative Prior for 12-lead ECGs
@@ -23,7 +23,11 @@
 * Baseline Wander: ```python denoising_mpgs.py denoising.noise_type='bw' train.results_path=<path of the prior>```
 * Electrode Motion: ```python denoising_mpgs.py denoising.noise_type='em' train.results_path=<path of the prior>```
 
-# Citation
+## Data and pretrained models
+* preprocessed validation and test 10s ECGs [preprocessed_100Hz](https://drive.google.com/drive/folders/1R4WPrJOZ6M3EC5_46T6GQoNNLKbbwqZ1?usp=share_link)
+* pretrained diffusion prior for 10s ECGs [diffusion_model](https://drive.google.com/drive/folders/1CyZvVza4q5SHlTkUlexumiLgb2vz4q6t?usp=share_link)
+
+## Citation
 If you use this code, please cite the following
 ```
 @article{bedin2025reconstructing,
