@@ -22,3 +22,18 @@
 ## Denoising on MIT-BIH Noise database
 * Baseline Wander: ```python denoising_mpgs.py denoising.noise_type='bw' train.results_path=<path of the prior>```
 * Electrode Motion: ```python denoising_mpgs.py denoising.noise_type='em' train.results_path=<path of the prior>```
+
+# Citation
+If you use this code, please cite the following
+```
+@article{bedin2025reconstructing,
+  author  = {Bedin, Lisa and Janati, Yazid and Victorino Cardoso, Gabriel and Duchateau, Josselin and Dubois, R{\'e}mi and Moulines, Eric},
+  title   = {Reconstructing {ECG} from indirect signals: a denoising diffusion approach},
+  journal = {Phil. Trans. R. Soc. A},
+  volume  = {383},
+  year    = {2025},
+  pages   = {20240330},
+  doi     = {10.1098/rsta.2024.0330},
+  url     = {https://doi.org/10.1098/rsta.2024.0330}
+}
+```
