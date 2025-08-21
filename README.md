@@ -22,7 +22,9 @@ This repository introduces **RhythmDiff**, a **denoising diffusion model** desig
 ### PTB-XL Dataset (Optional)
 * Download: [PTB-XL 1.0.3](https://physionet.org/content/ptb-xl/1.0.3/)
 * Preprocessing: Run the following script to preprocess the dataset (optional if using preprocessed data):
-  ```python preprocessing/generate_ptb_xl.py <path of download ptbxl dataset> <target sampling frequency>```
+  
+  ```python preprocessing/generate_ptb_xl.py <path_to_downloaded_ptbxl> <target_sampling_frequency>```
+  
   > **Note**: In our experiments, we used a sampling frequency of 100Hz for faster processing. You can adjust this parameter based on your needs.
 * SCP Statements: Description of available diagnostic statements: description of available statements [scp_statements](https://physionet.org/content/ptb-xl/1.0.1/scp_statements.csv)
 ### Noise Database
@@ -31,25 +33,47 @@ This repository introduces **RhythmDiff**, a **denoising diffusion model** desig
 ## Diffusion Generative Prior for 12-lead ECGs (Optional)
 ### Training
 If you want to train the model from scratch conditionally on SCP statements, set model.unconditional=false to enable training with diagnostic labels:
-```python diffusion_prior/train.py model.unconditional=false```
+
+```python diffusion_prior/train.py model.unconditional=false dataset.database_path=<folder_containing_preprocessed_data> train.results_path=<path_to_store_prior>```
+
 ### Generation
 Generate synthetic ECGs using the pretrained model
-* generate: ```python diffusion_prior/generate.py model.unconditional=false dataset.training_class=test```
+* generate:
+
+  ```python diffusion_prior/generate.py model.unconditional=false dataset.training_class=test dataset.database_path=<folder_containing_preprocessed_data> train.results_path=<path_to_pretrained_prior>```
+  
 * evaluation:
-  * classifier trained on real data: ```python diffusion_prior/downstream_classifier_ptbxlStrodoff.py evaluate.train_downstream='real'```
-  * classifier trained on synthetic data (after generated samples with `python diffusion_prior/generate.py`): ```python diffusion_prior/downstream_classifier_ptbxlStrodoff.py evaluate.train_downstream='gen'```
+  * classifier trained on real data:
+
+    ```python diffusion_prior/downstream_classifier_ptbxlStrodoff.py evaluate.train_downstream='real' dataset.database_path=<folder_containing_preprocessed_data> train.results_path=<path_to_pretrained_prior>```
+    
+  * classifier trained on synthetic data (after generated samples with `python diffusion_prior/generate.py`):
+
+    ```python diffusion_prior/downstream_classifier_ptbxlStrodoff.py evaluate.train_downstream='gen' dataset.database_path=<folder_containing_preprocessed_data> train.results_path=<path_to_pretrained_prior>```
 
 ## 12-leads reconstruction from single-lead I
-* MGPS: ```python inpainting_ecg.py algo.missingness_type=lead algo.missingness=1 train.results_path=<path of the prior>```
-* eval: ```python eval_inpainting_ecg.py algo.missingness_type=lead algo.missingness=1 train.results_path=<path of the prior>```
+* MGPS:
+
+  ```python inpainting_ecg.py algo.missingness_type=lead algo.missingness=1 dataset.database_path=<folder_containing_preprocessed_data> train.results_path=<path_to_pretrained_prior>```
+  
+* eval:
+
+  ```python eval_inpainting_ecg.py algo.missingness_type=lead algo.missingness=1 dataset.database_path=<folder_containing_preprocessed_data> train.results_path=<path_to_pretrained_prior>```
 
 ## Denoising on MIT-BIH Noise database
-* Baseline Wander: ```python denoising_mpgs.py denoising.noise_type='bw' train.results_path=<path of the prior>```
-* Electrode Motion: ```python denoising_mpgs.py denoising.noise_type='em' train.results_path=<path of the prior>```
+* Baseline Wander:
+
+  ```python denoising_mpgs.py denoising.noise_type='bw' dataset.database_path=<folder_containing_preprocessed_data> train.results_path=<path_to_pretrained_prior>```
+  
+* Electrode Motion:
+
+  ```python denoising_mpgs.py denoising.noise_type='em' dataset.database_path=<folder_containing_preprocessed_data> train.results_path=<path_to_pretrained_prior>```
 
 ## Optional: Missing-Block (For Research Comparison)
 This section is only relevant if you want to compare results with existing literature. It requires training a specific model on 2.5-second segments, which is not the default setup.
-```python inpainting_ecg.py algo.missingness_type=bm algo.missingness=50 train.results_path=<path_to_specific_prior>```
+
+```python inpainting_ecg.py algo.missingness_type=bm algo.missingness=50 dataset.database_path=<folder_containing_preprocessed_data> train.results_path=<path_to_pretrained_prior>```
+
 > **Note**: The prior should be trained on 2.5-second segments for comparison with baselines.
 
 ## Citation
