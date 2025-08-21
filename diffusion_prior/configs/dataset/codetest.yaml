@@ -1,6 +1,0 @@
-_name_: "codetest"
-name: "codetest"
-database_path: '/mnt/Reseau/Signal/lisa/ECG_inverse_problems_benchmark_data/inpainting_anomaly_detection/model_evals/data'
-sampling_rate: 100  # 125
-all_limb: false
-segment_length: 1024  # 256  # 256 #  1024  # 2048  #   #  2048  # 2500

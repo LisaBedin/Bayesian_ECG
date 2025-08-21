@@ -76,6 +76,7 @@ class PtbXLDataset(Dataset):
         self.label_names = label_names
         self.training_class = training_class
         data_path = os.path.join(database_path, f'processed_{sampling_rate}Hz/{training_class}')
+        self.data_path = data_path
         self.labels = torch.tensor(np.load(os.path.join(data_path, 'labels.npy')))
         self.header = pd.read_csv(os.path.join(data_path, 'headers.csv'))
         self.lab_id_dic = {'NSR': [46, 61], 'RBBB': 12, 'LBBB': 11, 'SB': 59, 'AF': 4}

@@ -197,20 +197,6 @@ def generate(
         ckpt_iter,
         int(start.elapsed_time(end)/1000)))
 
-    # save audio to .wav
-    if 'physionet' not in dataset_cfg._name_ and 'ptbxl' not in dataset_cfg._name_:
-        for i in range(n_samples):
-            outfile = '{}k_{}.wav'.format(ckpt_iter // 1000, n_samples*rank + i)
-            wavwrite(os.path.join(output_directory, outfile),
-                        dataset_cfg["sampling_rate"],
-                        generated_audio[i].squeeze().cpu().numpy())
-
-            # save audio to tensorboard
-            # tb = SummaryWriter(os.path.join('exp', local_path, tensorboard_directory))
-            # tb.add_audio(tag=outfile, snd_tensor=generated_audio[i], sample_rate=dataset_cfg["sampling_rate"])
-            # tb.close()
-
-        print('saved generated samples at iteration %s' % ckpt_iter)
     if save:
         np.savez(os.path.join(output_directory, f'{dataset_cfg._name_}_{dataset_cfg.training_class}{batch_id}.npz'), ecg=generated_audio.detach().cpu().numpy(),
                  gt=gt.cpu().numpy(), label=label.detach().cpu().numpy())

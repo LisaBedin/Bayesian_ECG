@@ -1,9 +1,0 @@
-_name_: "physionet"
-name: "physionet"
-database_path: '/mnt/data/lisa/physionet.org/ECG10s_250Hz'
-# categories_to_filter: ["NSR"]  # , "SB", "STach", "SA"]
-normalized: 'no'  # 'per_lead'  # global
-segment_length: 2048  # 2048  #   #  2048  # 2500
-all_limb: false
-dataset_names: ['ptb-xl', 'ptb']
-# noise_path: ''  # /mnt/Reseau/Signal/lisa/ECG_data/mit-bih-noise-stress-test-database-1.0.0/bw'

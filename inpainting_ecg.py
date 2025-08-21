@@ -13,12 +13,12 @@ from posterior_samplers.mask_generator import get_mask_bm, get_mask_rm, get_mask
 import torch
 
 from diffusion_prior.dataloaders import dataloader
+
 from diffusion_prior.utils import calc_diffusion_hyperparams, local_directory, print_size  # 
 from diffusion_prior.models import construct_model
-from posterior_samplers.mgps import load_mgps_sampler
+from posterior_samplers.mgps import load_vdps_sampler
 import matplotlib.pyplot as plt
 from matplotlib.ticker import AutoMinorLocator
-
 
 def plot_12leads(ecg, ecg_pred, ecg_pred25, ecg_pred75, mask, plot_T, offset_T):
     max_H = 2.1   # 3.1  # cm = mV
@@ -120,7 +120,7 @@ def get_12leads(X_test):
     return X_test
 
 
-@hydra.main(version_base=None, config_path="sashimi/configs/", config_name="config")
+@hydra.main(version_base=None, config_path="diffusion_prior/configs/", config_name="config")
 def main(cfg: DictConfig) -> None:
     print(OmegaConf.to_yaml(cfg))
     OmegaConf.set_struct(cfg, False)  # Allow writing keys
@@ -217,7 +217,7 @@ def main(cfg: DictConfig) -> None:
 
         initial_noise = torch.randn(cfg.algo.n_samples, *shape).cuda()
 
-        mgps_fn = load_mgps_sampler(cfg.algo)
+        mgps_fn = load_vdps_sampler(cfg.algo)
 
         samples = mgps_fn(
             initial_noise=initial_noise,
@@ -228,6 +228,8 @@ def main(cfg: DictConfig) -> None:
             display_fn=display_time_series,
             ground_truth=x_orig.cpu()
         )  # 10 minutes for 1 sample 1 observation...
+        import pdb
+        pdb.set_trace()
 
         # ecg_real, ecg_fake = get_12leads(x_orig.detach().cpu())[0], get_12leads(samples.detach().cpu())
         # mask_plot = np.zeros(ecg_real.shape).astype(bool)

@@ -85,7 +85,7 @@ def get_12leads(X_test):
     X_test = torch.tensor(np.concatenate([X_test[:, :3], augm_leads, X_test[:, 3:]], axis=1)).cuda()
     return X_test
 
-@hydra.main(version_base=None, config_path="sashimi/configs/", config_name="config")
+@hydra.main(version_base=None, config_path="diffusion_prior/configs/", config_name="config")
 def main(cfg: DictConfig) -> None:
     print(OmegaConf.to_yaml(cfg))
     OmegaConf.set_struct(cfg, False)  # Allow writing keys
@@ -99,6 +99,8 @@ def main(cfg: DictConfig) -> None:
                                                    cfg.model, cfg.diffusion,
                                                    cfg.dataset,
                                                    'waveforms')
+    import pdb
+    pdb.set_trace()
 
     # dataset = PhysionetECG(**cfg.dataset)
     results_path = os.path.join(output_directory, f'{cfg.dataset.name}_{cfg.algo.missingness_type}{cfg.algo.missingness}')

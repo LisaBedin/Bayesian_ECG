@@ -1,29 +1,23 @@
 import torch
 from torch.utils.data.distributed import DistributedSampler
-from .sc import SpeechCommands
-from .mel2samp import Mel2Samp
-from .ecg_datasets import PhysionetECG, PtbXLDataset, DownstreamEval, GeorgiaDataset, CodeTestDataset, LargeDataset
+#from .sc import SpeechCommands
+#from .mel2samp import Mel2Samp
+from .ecg_datasets import PhysionetECG, PtbXLDataset, DownstreamEval #, GeorgiaDataset, CodeTestDataset, LargeDataset
 
 
 def dataloader(dataset_cfg, batch_size, num_gpus, unconditional=True, shuffle=True):
 
     dataset_name = dataset_cfg.pop("_name_")
-    if dataset_name == "sc09":
-        assert unconditional
-        dataset = SpeechCommands(dataset_cfg.data_path)
-    elif dataset_name == "ljspeech":
-        assert not unconditional
-        dataset = Mel2Samp(**dataset_cfg)
-    elif dataset_name == "physionet" or dataset_name == 'physionet_arrhythmia':
+    if dataset_name == "physionet" or dataset_name == 'physionet_arrhythmia':
         dataset = PhysionetECG(**dataset_cfg)
     elif dataset_name == 'ptbxl':
         dataset = PtbXLDataset(**dataset_cfg)
-    elif dataset_name == 'georgia':
-        dataset = GeorgiaDataset(**dataset_cfg)
-    elif dataset_name == 'codetest':
-        dataset = CodeTestDataset(**dataset_cfg)
-    elif dataset_name == 'large':
-        dataset = LargeDataset(**dataset_cfg)
+    # elif dataset_name == 'georgia':
+    #     dataset = GeorgiaDataset(**dataset_cfg)
+    # elif dataset_name == 'codetest':
+    #     dataset = CodeTestDataset(**dataset_cfg)
+    # elif dataset_name == 'large':
+    #     dataset = LargeDataset(**dataset_cfg)
     # elif dataset_name == "physionet_centered":
     #    dataset = PhysionetNPZ(**dataset_cfg)
 

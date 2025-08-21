@@ -1,7 +1,7 @@
 defaults:
   - _self_
-  - experiment: ecg  # sc09
-  - algo: vdps  # _old_bis
+  - experiment: ecg
+  - algo: mgps  # _old
 
 train: # Not used in generate.py
   name: null # Name of experiment (prefix of experiment name)
@@ -19,8 +19,6 @@ generate:
   ckpt_smooth: null # Which checkpoint to start averaging from (experimental feature, can ignore)
   n_samples: 2 # Number of utterances to be generated (per GPU)
   batch_size: null # Number of samples to generate at once per GPU. null means max (equal to samples_per_gpu)
-  # mel_path: null # Folder of preprocessed spectrograms (optional)
-  # mel_name: null # Name of specific spectrogram to condition on (set to null for unconditional, set to an audio file name for vocoding)
 
 distributed:
   dist_backend: nccl
@@ -46,20 +44,8 @@ denoising:
 
 evaluate:
   #benchmark_folder: '/lustre/fsn1/projects/rech/vpd/udw33dp/ECG_inverse_problems_benchmark_data'
-  benchmark_folder: '/mnt/Reseau/Signal/lisa/ECG_inverse_problems_benchmark_data'
+  # benchmark_folder: '/mnt/Reseau/Signal/lisa/ECG_inverse_problems_benchmark_data'
   train_downstream: 'gen'  #  'real'
-
-semi_supervised:
-  results_path: '/lustre/fsn1/projects/rech/vpd/udw33dp/ecg_results/semi_supervised/ViT_SSL_exp3'
-  epochs: 200
-  batch_size: 64  # 1024
-  accum_iter: 1
-  log_iter: 100  #100
-  weight_decay: 0.05 #, type=float, default=0.05, help='weight decay (default: 0.05)')
-  #lr: 0.00003  #type=float, default=None, metavar='LR', help='learning rate (absolute lr)')
-  blr: 1.5e-4 #1e-3  #parser.add_argument('--blr', type=float, default=1e-3, metavar='LR', help='base learning rate: absolute_lr = base_lr * total_batch_size / 256')
-  #min_lr: 0.  #parser.add_argument('--min_lr', type=float, default=0., metavar='LR', help='lower lr bound for cyclic schedulers that hit 0')
-  warmup_epoch: 5   #parser.add_argument('--warmup_epochs', type=int, default=40, metavar='N',help='epochs to warmup LR')
 
 wandb:
   mode: offline  # online # Pass in 'wandb.mode=online' to turn on wandb logging
