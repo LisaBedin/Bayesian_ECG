@@ -1,5 +1,16 @@
 # Reconstructing ECG from Indirect Signals: A Denoising Diffusion Approach
-This repository provides tools to reconstruct 12-lead ECGs from indirect signals (e.g. incomplete and / or noisy ECGs) using a denoising diffusion approach. You can skip the preprocessing and training steps by using the preprocessed datasets and pretrained models provided below.
+This repository introduces **RhythmDiff**, a **denoising diffusion model** designed to reconstruct **12-lead ECGs** from partial or noisy signals (e.g., single-lead inputs or corrupted recordings). Our method leverages **structured state-space modeling** for efficient, high-quality ECG synthesis and integrates **Bayesian inverse problem algorithms** to handle:
+- **Missing lead reconstruction** (e.g., from Lead I)
+- **Noise and artifact removal** (baseline wander, electrode motion)
+
+**Key features**: Pretrained models and datasets available for quick evaluation. Lightweight architecture (16M parameters) with fast inference (~1 min for 10 samples on GPU). State-of-the-art performance on PTB-XL and MIT-BIH benchmarks.
+**Use cases**: Wearable devices, clinical diagnostics, and synthetic data augmentation.
+
+---
+
+*For details, see our [Phil. Trans. R. Soc. A paper](https://doi.org/10.1098/rsta.2024.0330).*
+
+---
 
 ## Quick Start (Using Pretrained Models)
 | Resource | Description | Link |
