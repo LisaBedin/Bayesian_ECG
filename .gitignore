@@ -23,6 +23,9 @@ build/
 develop-eggs/
 downloads/
 eggs/
+wandb/
+.wandb/
+.swp
 .eggs/
 lib/
 lib64/
